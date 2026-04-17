@@ -11,7 +11,7 @@
         color: #fff;
         margin: 0;
       }
-      h3 { margin: 0 0 10px; font-size: 14px; color: #fff; }
+      h3 { margin: 0 0 10px; font-size: 14px; }
       .row { font-size: 12px; margin: 4px 0; color: #aaa; }
       .row span { color: #fff; font-weight: 500; }
       .status-dot {
@@ -23,6 +23,7 @@
       }
       .status-dot.playing { background: #1db954; }
       .status-dot.paused  { background: #f5a623; }
+      #ws-status { font-size: 11px; margin-top: 10px; }
       #title-text {
         white-space: nowrap;
         overflow: hidden;
@@ -44,6 +45,7 @@
     <div class="row" id="time-row" style="display:none">
       Time: <span id="time-text">0s</span>
     </div>
+    <div id="ws-status">⏳ Checking connection...</div>
     <script src="popup.js"></script>
   </body>
 </html>

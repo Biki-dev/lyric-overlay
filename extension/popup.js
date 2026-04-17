@@ -13,6 +13,16 @@ chrome.runtime.sendMessage({ type: "getState" }, (state) => {
   const titleText  = document.getElementById("title-text");
   const timeRow    = document.getElementById("time-row");
   const timeText   = document.getElementById("time-text");
+  const wsStatus   = document.getElementById("ws-status");
+
+  // ── WebSocket status ──
+  if (state?.isConnected) {
+    wsStatus.textContent = "🟢 Desktop app connected";
+    wsStatus.style.color = "#1db954";
+  } else {
+    wsStatus.textContent = "🔴 Desktop app not connected";
+    wsStatus.style.color = "#e74c3c";
+  }
 
   if (!state || !state.videoId) {
     statusText.textContent = "No video detected";
@@ -24,11 +34,11 @@ chrome.runtime.sendMessage({ type: "getState" }, (state) => {
   dot.className = "status-dot " + (playing ? "playing" : "paused");
   statusText.textContent = playing ? "Playing" : "Paused";
 
-  // Title
+   // Title
   titleRow.style.display = "block";
   titleText.textContent = state.title || state.videoId;
 
-  // Time
+    // Time
   timeRow.style.display = "block";
   timeText.textContent = formatTime(state.currentTime);
 });
