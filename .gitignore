@@ -1,0 +1,15 @@
+# Rust / Tauri
+desktop/src-tauri/target/
+desktop/dist/
+
+# Node
+node_modules/
+desktop/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/

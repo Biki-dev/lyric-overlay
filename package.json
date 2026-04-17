@@ -1,0 +1,9 @@
+{
+  "name": "lyric-overlay",
+  "private": true,
+  "workspaces": ["desktop"],
+  "scripts": {
+    "dev:desktop": "cd desktop && npm run tauri dev",
+    "dev:extension": "echo 'Load extension/ manually in chrome://extensions'"
+  }
+}
