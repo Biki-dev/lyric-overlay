@@ -3,13 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <style>
-      body { width: 220px; padding: 12px; font-family: sans-serif; }
-      h3   { margin: 0 0 8px; font-size: 14px; }
-      p    { margin: 0; font-size: 12px; color: #555; }
+      body {
+        width: 240px;
+        padding: 14px;
+        font-family: -apple-system, sans-serif;
+        background: #0f0f0f;
+        color: #fff;
+        margin: 0;
+      }
+      h3 { margin: 0 0 10px; font-size: 14px; color: #fff; }
+      .row { font-size: 12px; margin: 4px 0; color: #aaa; }
+      .row span { color: #fff; font-weight: 500; }
+      .status-dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #555;
+        margin-right: 6px;
+      }
+      .status-dot.playing { background: #1db954; }
+      .status-dot.paused  { background: #f5a623; }
+      #title-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        display: block;
+      }
     </style>
   </head>
   <body>
     <h3>🎵 Lyric Overlay</h3>
-    <p>Open YouTube and play a video to get started.</p>
+    <div class="row">
+      <span class="status-dot" id="dot"></span>
+      <span id="status-text">No video detected</span>
+    </div>
+    <div class="row" id="title-row" style="display:none">
+      Title: <span id="title-text"></span>
+    </div>
+    <div class="row" id="time-row" style="display:none">
+      Time: <span id="time-text">0s</span>
+    </div>
+    <script src="popup.js"></script>
   </body>
 </html>
