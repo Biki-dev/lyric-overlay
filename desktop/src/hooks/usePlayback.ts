@@ -1,25 +1,27 @@
-import { useEffect, useState, useRef } from "react";
-import { listen }                       from "@tauri-apps/api/event";
-import { PlaybackState }                from "../types";
-import { loadLyrics }                   from "../lib/lyricsStore";
-import { ParsedLrc }                    from "../lib/lrcParser";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { listen }          from "@tauri-apps/api/event";
+import { PlaybackState }   from "../types";
+import { loadLyrics }      from "../lib/lyricsStore";
+import { ParsedLrc }       from "../lib/lrcParser";
 
 const DEFAULT_STATE: PlaybackState = {
-  videoId:     null,
-  title:       null,
-  currentTime: 0,
-  duration:    0,
-  paused:      true,
+  videoId: null, title: null,
+  currentTime: 0, duration: 0, paused: true,
 };
 
+export type LyricsStatus = "idle" | "loading" | "found" | "not_found";
+
 export function usePlayback() {
-  const [playback,   setPlayback]   = useState<PlaybackState>(DEFAULT_STATE);
-  const [lyrics,     setLyrics]     = useState<ParsedLrc | null>(null);
-  const [lyricsState, setLyricsState] = useState<"idle"|"loading"|"found"|"not_found">("idle");
+  const [playback,     setPlayback]     = useState<PlaybackState>(DEFAULT_STATE);
+  const [lyrics,       setLyrics]       = useState<ParsedLrc | null>(null);
+  const [lyricsStatus, setLyricsStatus] = useState<LyricsStatus>("idle");
+  const [offset,       setOffset]       = useState(0); // manual sync offset in seconds
 
   const interpolatorRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVideoId     = useRef<string | null>(null);
+  const fetchedForId    = useRef<string | null>(null); // track what we already fetched
 
+  // ── Interpolation ───────────────────────────────────────────────────────
   function startInterpolation(baseTime: number, basestamp: number) {
     stopInterpolation();
     interpolatorRef.current = setInterval(() => {
@@ -38,65 +40,87 @@ export function usePlayback() {
     }
   }
 
-  // Fetch lyrics whenever video changes
-  async function handleVideoChange(videoId: string, title: string) {
-    if (videoId === lastVideoId.current) return;
-    lastVideoId.current = videoId;
+  // ── Lyrics fetch ────────────────────────────────────────────────────────
+  const triggerFetch = useCallback(async (videoId: string, title: string) => {
+    // Don't re-fetch if already fetched for this video
+    if (fetchedForId.current === videoId) return;
+    fetchedForId.current = videoId;
 
     setLyrics(null);
-    setLyricsState("loading");
+    setLyricsStatus("loading");
+    setOffset(0); // reset offset for new song
 
+    console.log(`[Lyrics] Starting fetch for: ${title}`);
     const data = await loadLyrics(videoId, title);
 
-    // Check we're still on the same video (user might have switched)
-    if (lastVideoId.current !== videoId) return;
+    // Guard: user may have changed video while fetching
+    if (fetchedForId.current !== videoId) return;
 
     if (data && data.lines.length > 0) {
       setLyrics(data);
-      setLyricsState("found");
+      setLyricsStatus("found");
+      console.log(`[Lyrics] Loaded ${data.lines.length} lines`);
     } else {
       setLyrics(null);
-      setLyricsState("not_found");
+      setLyricsStatus("not_found");
+      console.log(`[Lyrics] Not found for: ${title}`);
     }
-  }
+  }, []);
 
+  // ── Event listener ──────────────────────────────────────────────────────
   useEffect(() => {
     const unlisten = listen<any>("playback-event", (event) => {
       const msg = event.payload;
+      const { type, videoId, title, currentTime, duration, paused } = msg;
 
+      // ── Always update playback state ──
       setPlayback(prev => ({
-        videoId:     msg.videoId     ?? prev.videoId,
-        title:       msg.title       ?? prev.title,
-        currentTime: msg.currentTime ?? prev.currentTime,
-        duration:    msg.duration    ?? prev.duration,
-        paused:      msg.paused      ?? prev.paused,
+        videoId:     videoId     ?? prev.videoId,
+        title:       title       ?? prev.title,
+        currentTime: currentTime ?? prev.currentTime,
+        duration:    duration    ?? prev.duration,
+        paused:      paused      ?? prev.paused,
       }));
 
-      // Trigger lyrics fetch on new video
-      if (msg.videoId && msg.title) {
-        handleVideoChange(msg.videoId, msg.title);
+      // ── Fetch lyrics as early as possible ──
+      // Trigger on ANY event that carries a new videoId+title
+      // This way we start fetching on the very first message
+      if (videoId && title && videoId !== lastVideoId.current) {
+        lastVideoId.current = videoId;
+        triggerFetch(videoId, title);
       }
 
-      switch (msg.type) {
+      // ── Interpolation control ──
+      switch (type) {
         case "play":
         case "tick":
-          startInterpolation(msg.currentTime ?? 0, Date.now());
+        case "reconnected":
+          if (!paused) {
+            startInterpolation(currentTime ?? 0, Date.now());
+          }
           break;
+
         case "pause":
           stopInterpolation();
           break;
+
         case "seek":
-          startInterpolation(msg.currentTime ?? 0, Date.now());
+          // On seek: snap currentTime immediately then interpolate
+          setPlayback(prev => ({ ...prev, currentTime: currentTime ?? prev.currentTime }));
+          if (!paused) startInterpolation(currentTime ?? 0, Date.now());
           break;
+
         case "videoChanged":
           stopInterpolation();
+          lastVideoId.current = videoId ?? null;
           setPlayback({
-            videoId:     msg.videoId ?? null,
-            title:       msg.title   ?? null,
+            videoId:     videoId  ?? null,
+            title:       title    ?? null,
             currentTime: 0,
-            duration:    msg.duration ?? 0,
+            duration:    duration ?? 0,
             paused:      true,
           });
+          if (videoId && title) triggerFetch(videoId, title);
           break;
       }
     });
@@ -105,7 +129,7 @@ export function usePlayback() {
       unlisten.then(fn => fn());
       stopInterpolation();
     };
-  }, []);
+  }, [triggerFetch]);
 
-  return { playback, lyrics, lyricsState };
+  return { playback, lyrics, lyricsStatus, offset, setOffset };
 }

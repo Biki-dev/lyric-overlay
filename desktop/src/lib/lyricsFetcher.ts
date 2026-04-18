@@ -12,50 +12,43 @@ export interface FetchResult {
 }
 
 // ── Main fetch function ───────────────────────────────────────────────────
-
 export async function fetchLyrics(
   videoId:    string,
   videoTitle: string
 ): Promise<FetchResult> {
-
   if (cache.has(videoId)) {
     const cached = cache.get(videoId)!;
     return { found: !!cached, data: cached, source: "cache" };
   }
 
-  // Parse "Artist - Song Title" from YouTube title
   const { artist, track } = parseYouTubeTitle(videoTitle);
-  console.log(`[Lyrics] Fetching: artist="${artist}" track="${track}"`);
+  console.log(`[Lyrics] artist="${artist}" track="${track}"`);
 
-  try {
-    // Try exact search first
-    let lrc = await trySearch(artist, track);
+  // Strategy 1: artist + track
+  let lrc = artist ? await trySearch(artist, track) : null;
 
-    // If not found, try with just the track name (no artist)
-    if (!lrc && artist) {
-      lrc = await trySearch("", track);
-    }
+  // Strategy 2: track only (no artist)
+  if (!lrc) lrc = await trySearch("", track);
 
-    if (!lrc) {
-      console.log(`[Lyrics] Not found for: ${videoTitle}`);
-      cache.set(videoId, null);
-      return { found: false, data: null, source: "lrclib" };
-    }
+  // Strategy 3: swap artist/track (some titles are "Song - Artist")
+  if (!lrc && artist) lrc = await trySearch(track, artist);
 
-    const parsed = parseLrc(lrc);
-    cache.set(videoId, parsed);
-    console.log(`[Lyrics] Found ${parsed.lines.length} lines`);
-    return { found: true, data: parsed, source: "lrclib" };
+  // Strategy 4: use raw title as track name
+  if (!lrc) lrc = await trySearch("", videoTitle.slice(0, 60));
 
-  } catch (err) {
-    console.error("[Lyrics] Fetch error:", err);
+  if (!lrc) {
+    console.log(`[Lyrics] All strategies failed for: ${videoTitle}`);
     cache.set(videoId, null);
-    return { found: false, data: null, source: "error" };
+    return { found: false, data: null, source: "lrclib" };
   }
+
+  const parsed = parseLrc(lrc);
+  cache.set(videoId, parsed);
+  console.log(`[Lyrics] ✅ Found ${parsed.lines.length} lines`);
+  return { found: true, data: parsed, source: "lrclib" };
 }
 
 // ── lrclib.net API call ───────────────────────────────────────────────────
-
 async function trySearch(
   artist: string,
   track:  string
@@ -64,23 +57,28 @@ async function trySearch(
   if (artist) params.set("artist_name", artist);
 
   const url = `${BASE_URL}/search?${params}`;
-  const res  = await fetch(url);
 
-  if (!res.ok) return null;
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000) // 5s timeout
+    });
+    if (!res.ok) return null;
 
-  const results = await res.json();
-  if (!Array.isArray(results) || results.length === 0) return null;
+    const results = await res.json();
+    if (!Array.isArray(results) || results.length === 0) return null;
 
-  // Pick the first result that has synced lyrics
-  const withLrc = results.find((r: any) => r.syncedLyrics);
-  if (!withLrc) {
-    // Fall back to plain lyrics if no synced version
+    // Prefer synced lyrics
+    const withLrc = results.find((r: any) => r.syncedLyrics);
+    if (withLrc) return withLrc.syncedLyrics;
+
+    // Fall back to plain
     const withPlain = results.find((r: any) => r.plainLyrics);
     if (withPlain) return convertPlainToLrc(withPlain.plainLyrics);
+
+    return null;
+  } catch {
     return null;
   }
-
-  return withLrc.syncedLyrics;
 }
 
 // ── YouTube title parser ──────────────────────────────────────────────────
@@ -94,23 +92,35 @@ export function parseYouTubeTitle(title: string): {
   artist: string;
   track:  string;
 } {
-  // Strip common YouTube suffixes first
-  const cleaned = title
-    .replace(/\s*[\(\[].*(official|video|audio|lyrics|hd|mv|music video|prod\.?)[^\)\]]*[\)\]]/gi, "")
-    .replace(/\s*[\(\[].*[\)\]]/g, "")   // remove all remaining parentheses/brackets
+  let cleaned = title
+    // Remove feat./ft. blocks
+    .replace(/\s*[\(\[](feat|ft)\.?[^\)\]]*[\)\]]/gi, "")
+    // Remove common YouTube suffixes in brackets/parens
+    .replace(/\s*[\(\[]\s*(official\s*)?(music\s*)?(video|audio|mv|lyric[s]?|hd|4k|visualizer|live|performance|prod\.?[^)\]]*)\s*[\)\]]/gi, "")
+    // Remove standalone year in parens like (2023)
+    .replace(/\s*\(\d{4}\)/g, "")
+    // Remove remaining empty brackets
+    .replace(/\s*[\(\[\]\)]+\s*/g, " ")
+    // Japanese/Korean title brackets
+    .replace(/[「」『』【】]/g, " ")
     .trim();
 
-  // Split on " - " separator
-  const parts = cleaned.split(/\s+-\s+/);
+  // Split on " - " (with surrounding spaces)
+  const dashParts = cleaned.split(/\s+-\s+/);
 
-  if (parts.length >= 2) {
-    return {
-      artist: parts[0].trim(),
-      track:  parts.slice(1).join(" - ").trim(),
-    };
+  if (dashParts.length >= 2) {
+    const artist = dashParts[0].trim();
+    const track  = dashParts.slice(1).join(" ").trim();
+    return { artist, track };
   }
 
-  // No separator found — treat whole title as track name
+  // Try " | " separator (less common)
+  const pipeParts = cleaned.split(/\s+\|\s+/);
+  if (pipeParts.length >= 2) {
+    return { artist: pipeParts[0].trim(), track: pipeParts[1].trim() };
+  }
+
+  // No separator — use full title as track name
   return { artist: "", track: cleaned };
 }
 

@@ -17,7 +17,7 @@ pub fn run() {
                 WebviewUrl::App("/overlay".into()),  
             )
             .title("Lyric Overlay")
-            .inner_size(600.0, 160.0)           
+            .inner_size(600.0, 200.0)           
             .position(                          
                 (1920.0 / 2.0) - 300.0,        
                 1080.0 - 200.0,                 
