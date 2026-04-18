@@ -1,89 +1,109 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import LyricsDisplay from "../components/LyricsDisplay";
+import ProgressBar from "../components/ProgressBar";
+import { LyricLine, PlaybackState } from "../types";
 
+const MOCK_LYRICS: LyricLine[] = [
+  { time: 0,  text: "We don't talk about Bruno" },
+  { time: 4,  text: "No, no, no" },
+  { time: 6,  text: "We don't talk about Bruno" },
+  { time: 10, text: "But it was my wedding day" },
+  { time: 14, text: "It was our wedding day" },
+  { time: 18, text: "We were getting ready" },
+  { time: 22, text: "And there wasn't a cloud in the sky" },
+  { time: 26, text: "No clouds allowed in the sky" },
+];
 
-let dragStart = { x: 0, y: 0 };
+const MOCK_STATE: PlaybackState = {
+  videoId:     "mock123",
+  title:       "We Don't Talk About Bruno",
+  currentTime: 0,
+  duration:    180,
+  paused:      false,
+};
 
 function Overlay() {
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition]     = useState({ x: 0, y: 0 });
 
+  const [playback, setPlayback] = useState<PlaybackState>(MOCK_STATE);
+  const [tick, setTick]         = useState(0);
 
- 
-  function onMouseDown(e: React.MouseEvent) {
-    setIsDragging(true);
-    dragStart = { x: e.clientX - position.x, y: e.clientY - position.y };
-  }
+  useState(() => {
+    const interval = setInterval(() => {
+      setPlayback(prev => ({
+        ...prev,
+        currentTime: (prev.currentTime + 1) % prev.duration,
+      }));
+      setTick(t => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  });
 
-  function onMouseMove(e: React.MouseEvent) {
-    if (!isDragging) return;
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  }
-
-  function onMouseUp() {
-    setIsDragging(false);
-  }
+  const hasVideo = !!playback.videoId;
 
   return (
-    <div
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      style={{
-        // Full viewport — transparent background
-        width: "100vw",
-        height: "100vh",
-        background: "transparent",
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        paddingBottom: "40px",
-        boxSizing: "border-box",
-        cursor: isDragging ? "grabbing" : "default",
-        userSelect: "none",
-      }}
-    >
-      {/* ── Lyrics Card ─────────────────────────────────────────────── */}
-      <div style={{
-        background: "rgba(0, 0, 0, 0.75)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderRadius: "16px",
-        padding: "16px 28px",
-        maxWidth: "600px",
-        textAlign: "center",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-        cursor: "grab",
-      }}>
-        {/* Current lyric line — placeholder for now */}
-        <p style={{
-          margin: 0,
-          fontSize: "22px",
-          fontWeight: 600,
-          color: "#ffffff",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-          lineHeight: 1.4,
-          textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-          letterSpacing: "0.01em",
-        }}>
-          ♪ Waiting for lyrics...
-        </p>
+    <div style={containerStyle}>
+    
+      <div style={cardStyle}>
 
-        {/* Song title — placeholder */}
-        <p style={{
-          margin: "8px 0 0",
-          fontSize: "13px",
-          color: "rgba(255,255,255,0.5)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        }}>
-          Play a YouTube video
-        </p>
+       
+        {hasVideo && (
+          <p style={titleStyle}>
+            {playback.paused ? "⏸ " : "♪ "}
+            {playback.title ?? "Unknown"}
+          </p>
+        )}
+
+    
+        <LyricsDisplay
+          lines={MOCK_LYRICS}
+          currentTime={playback.currentTime}
+        />
+
+      
+        {hasVideo && (
+          <ProgressBar
+            currentTime={playback.currentTime}
+            duration={playback.duration}
+          />
+        )}
+
       </div>
     </div>
   );
 }
+
+const containerStyle: React.CSSProperties = {
+  width: "100vw",
+  height: "100vh",
+  background: "transparent",
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  paddingBottom: "32px",
+  boxSizing: "border-box",
+  userSelect: "none",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "rgba(0, 0, 0, 0.72)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  borderRadius: "16px",
+  padding: "18px 32px 14px",
+  width: "580px",
+  textAlign: "center",
+  border: "1px solid rgba(255,255,255,0.07)",
+  boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: "0 0 10px",
+  fontSize: "12px",
+  fontWeight: 500,
+  color: "rgba(255,255,255,0.45)",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+};
 
 export default Overlay;
