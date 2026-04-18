@@ -1,70 +1,57 @@
+import { usePlayback } from "../hooks/usePlayback";
+
 function ControlPanel() {
+  const { playback, lyricsState } = usePlayback();
+  const connected = !!playback.videoId;
+
+  const lyricsValue =
+    lyricsState === "loading"   ? "⏳ Fetching..." :
+    lyricsState === "found"     ? "✅ Found"        :
+    lyricsState === "not_found" ? "❌ Not found"    : "—";
+
+  const lyricsColor =
+    lyricsState === "found"     ? "#1db954" :
+    lyricsState === "not_found" ? "#e74c3c" : "#888";
+
   return (
     <div style={containerStyle}>
       <h2 style={headingStyle}>🎵 Lyric Overlay</h2>
-
       <div style={cardStyle}>
-        <Row label="Status" value="Running" valueColor="#1db954" />
-        <Row label="WebSocket" value="Port 9001" />
-        <Row label="Overlay" value="Active ↗" />
+        <Row label="Status"      value={connected ? "Connected" : "Waiting..."} valueColor={connected ? "#1db954" : "#888"} />
+        <Row label="Now Playing" value={playback.title ?? "—"} />
+        <Row label="Video ID"    value={playback.videoId ?? "—"} />
+        <Row label="Lyrics"      value={lyricsValue} valueColor={lyricsColor} />
+        <Row label="Playback"    value={!connected ? "—" : playback.paused ? "⏸ Paused" : "▶ Playing"} />
+        <Row label="Time"        value={connected ? formatTime(playback.currentTime) : "—"} />
       </div>
-
       <p style={hintStyle}>
-        Play a YouTube video with the Chrome extension installed
-        to see synced lyrics in the overlay window.
+        {lyricsState === "not_found"
+          ? "Lyrics not found. Try a more popular song, or add LRC manually to lyricsStore.ts."
+          : lyricsState === "found"
+          ? "Lyrics synced — check the overlay window."
+          : "Play a YouTube video to get started."}
       </p>
     </div>
   );
 }
 
-function Row({ label, value, valueColor = "#fff" }: {
-  label: string;
-  value: string;
-  valueColor?: string;
-}) {
+function formatTime(s: number) {
+  const m = Math.floor(s / 60);
+  return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+}
+
+function Row({ label, value, valueColor = "#fff" }: { label: string; value: string; valueColor?: string }) {
   return (
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "8px 0",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
-      fontSize: "13px",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    }}>
-      <span style={{ color: "#888" }}>{label}</span>
-      <span style={{ color: valueColor, fontWeight: 500 }}>{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: "13px", fontFamily: "sans-serif", gap: "12px" }}>
+      <span style={{ color: "#888", flexShrink: 0 }}>{label}</span>
+      <span style={{ color: valueColor, fontWeight: 500, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span>
     </div>
   );
 }
 
-const containerStyle: React.CSSProperties = {
-  padding: "1.5rem",
-  background: "#111",
-  color: "#fff",
-  minHeight: "100vh",
-  boxSizing: "border-box",
-};
-
-const headingStyle: React.CSSProperties = {
-  margin: "0 0 1rem",
-  fontSize: "16px",
-  fontWeight: 600,
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-};
-
-const cardStyle: React.CSSProperties = {
-  background: "#1a1a1a",
-  borderRadius: "10px",
-  padding: "4px 14px",
-  marginBottom: "1rem",
-  border: "1px solid rgba(255,255,255,0.06)",
-};
-
-const hintStyle: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#555",
-  lineHeight: 1.6,
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-};
+const containerStyle: React.CSSProperties = { padding: "1.5rem", background: "#111", color: "#fff", minHeight: "100vh", boxSizing: "border-box" };
+const headingStyle:   React.CSSProperties = { margin: "0 0 1rem", fontSize: "16px", fontWeight: 600, fontFamily: "sans-serif" };
+const cardStyle:      React.CSSProperties = { background: "#1a1a1a", borderRadius: "10px", padding: "4px 14px", marginBottom: "1rem", border: "1px solid rgba(255,255,255,0.06)" };
+const hintStyle:      React.CSSProperties = { fontSize: "12px", color: "#555", lineHeight: 1.6, fontFamily: "sans-serif" };
 
 export default ControlPanel;
