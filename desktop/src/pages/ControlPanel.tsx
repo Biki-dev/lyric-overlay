@@ -1,17 +1,17 @@
 import { usePlayback } from "../hooks/usePlayback";
 
 function ControlPanel() {
-  const { playback, lyricsState } = usePlayback();
+  const { playback, lyricsStatus } = usePlayback();
   const connected = !!playback.videoId;
 
   const lyricsValue =
-    lyricsState === "loading"   ? "⏳ Fetching..." :
-    lyricsState === "found"     ? "✅ Found"        :
-    lyricsState === "not_found" ? "❌ Not found"    : "—";
+    lyricsStatus === "loading"   ? "⏳ Fetching..." :
+    lyricsStatus === "found"     ? "✅ Found"        :
+    lyricsStatus === "not_found" ? "❌ Not found"    : "—";
 
   const lyricsColor =
-    lyricsState === "found"     ? "#1db954" :
-    lyricsState === "not_found" ? "#e74c3c" : "#888";
+    lyricsStatus === "found"     ? "#1db954" :
+    lyricsStatus === "not_found" ? "#e74c3c" : "#888";
 
   return (
     <div style={containerStyle}>
@@ -25,9 +25,9 @@ function ControlPanel() {
         <Row label="Time"        value={connected ? formatTime(playback.currentTime) : "—"} />
       </div>
       <p style={hintStyle}>
-        {lyricsState === "not_found"
+        {lyricsStatus === "not_found"
           ? "Lyrics not found. Try a more popular song, or add LRC manually to lyricsStore.ts."
-          : lyricsState === "found"
+          : lyricsStatus === "found"
           ? "Lyrics synced — check the overlay window."
           : "Play a YouTube video to get started."}
       </p>
