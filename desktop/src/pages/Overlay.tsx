@@ -1,20 +1,34 @@
-import { usePlayback }  from "../hooks/usePlayback";
-import LyricsDisplay    from "../components/LyricsDisplay";
-import ProgressBar      from "../components/ProgressBar";
+import { useEffect } from "react";
+import { usePlayback } from "../hooks/usePlayback";
+import LyricsDisplay from "../components/LyricsDisplay";
+import ProgressBar from "../components/ProgressBar";
 
 function Overlay() {
   const { playback, lyrics, lyricsStatus, offset, setOffset } = usePlayback();
 
-  const lines    = lyrics?.lines ?? [];
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setOffset(o => o - 0.1);
+      } else if (e.key === "ArrowRight") {
+        setOffset(o => o + 0.1);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [setOffset]);
+
+  const lines = lyrics?.lines ?? [];
   const hasVideo = !!playback.videoId;
 
   // Apply offset to currentTime before passing to lyrics engine
   const adjustedTime = playback.currentTime + offset;
 
   function getTitle() {
-    if (!hasVideo)                      return "♪ Play a YouTube video";
-    if (lyricsStatus === "loading")     return "⏳ Fetching lyrics...";
-    if (lyricsStatus === "not_found")   return `♪ ${playback.title ?? ""} — no lyrics`;
+    if (!hasVideo) return "♪ Play a YouTube video";
+    if (lyricsStatus === "loading") return "⏳ Fetching lyrics...";
+    if (lyricsStatus === "not_found") return `♪ ${playback.title ?? ""} — no lyrics`;
     return `${playback.paused ? "⏸" : "♪"} ${playback.title ?? ""}`;
   }
 
@@ -42,29 +56,25 @@ function Overlay() {
         {/* Sync offset controls — only show when lyrics are loaded */}
         {lyricsStatus === "found" && (
           <div style={syncRowStyle}>
-            <button
-              style={syncBtnStyle}
-              onClick={() => setOffset(o => o - 0.5)}
-              title="Shift lyrics 0.5s earlier"
-            >
-              ◀ 0.5s
-            </button>
-
-            <span style={syncLabelStyle}>
-              {offset === 0 ? "sync" : `${offset > 0 ? "+" : ""}${offset.toFixed(1)}s`}
-            </span>
-
-            <button
-              style={syncBtnStyle}
-              onClick={() => setOffset(o => o + 0.5)}
-              title="Shift lyrics 0.5s later"
-            >
-              0.5s ▶
-            </button>
+            <div style={sliderWrapperStyle}>
+              <input
+                type="range"
+                min="-10"
+                max="10"
+                step="0.1"
+                value={offset}
+                onChange={(e) => setOffset(parseFloat(e.target.value))}
+                style={sliderStyle}
+                className="sync-slider"
+              />
+              <span style={syncLabelStyle}>
+                {offset === 0 ? "sync" : `${offset > 0 ? "+" : ""}${offset.toFixed(1)}s`}
+              </span>
+            </div>
 
             {offset !== 0 && (
               <button
-                style={{ ...syncBtnStyle, color: "rgba(255,100,100,0.7)" }}
+                style={{ ...syncBtnStyle, color: "#ff5a5a" }}
                 onClick={() => setOffset(0)}
                 title="Reset offset"
               >
@@ -109,21 +119,36 @@ const titleStyle: React.CSSProperties = {
 
 const syncRowStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
-  gap: "8px", marginTop: "10px",
+  gap: "12px", marginTop: "12px",
+  position: "relative", paddingBottom: "14px", // Leave room for absolute label
 };
 
 const syncBtnStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "6px", padding: "3px 10px",
-  color: "rgba(255,255,255,0.6)", fontSize: "11px",
-  cursor: "pointer", fontFamily: "sans-serif",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "6px", padding: "4px 8px",
+  color: "rgba(255,255,255,0.5)", fontSize: "10px",
+  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
   userSelect: "none",
 };
 
 const syncLabelStyle: React.CSSProperties = {
-  fontSize: "11px", color: "rgba(255,255,255,0.35)",
-  fontFamily: "monospace", minWidth: "40px", textAlign: "center",
+  position: "absolute", bottom: "-4px", left: "50%", transform: "translateX(-50%)",
+  fontSize: "10px", color: "rgba(255,255,255,0.5)",
+  fontFamily: "monospace", fontWeight: 600,
+  whiteSpace: "nowrap",
+};
+
+const sliderWrapperStyle: React.CSSProperties = {
+  position: "relative", width: "160px",
+  display: "flex", alignItems: "center",
+};
+
+const sliderStyle: React.CSSProperties = {
+  width: "100%",
+  cursor: "pointer",
+  accentColor: "rgba(255,255,255,0.8)",
+  margin: 0,
 };
 
 export default Overlay;
