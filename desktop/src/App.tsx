@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { Routes, Route } from "react-router-dom";
+import ControlPanel from "./pages/ControlPanel.tsx";
+import Overlay from "./pages/Overlay.tsx";
 
 function App() {
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>🎵 Lyric Overlay</h1>
-      <p>Desktop app is running. Waiting for lyrics...</p>
-    </div>
+    <Routes>
+      <Route path="/" element={<ControlPanel />} />
+      <Route path="/overlay" element={<Overlay />} />
+    </Routes>
   );
 }
 

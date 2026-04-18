@@ -1,6 +1,6 @@
-// ─── LyricOverlay Tauri App Entry ──────────────────────────────────────────
+mod ws_server;
 
-mod ws_server; // declare our new module
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,9 +9,29 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            // Spawn the WebSocket server as a background task.
-            // tauri::async_runtime::spawn uses tokio under the hood.
-            // This returns immediately — the server runs concurrently.
+            // This is a second window — separate from the main window.
+          
+            let _overlay = WebviewWindowBuilder::new(
+                app,
+                "overlay",                          
+                WebviewUrl::App("/overlay".into()),  
+            )
+            .title("Lyric Overlay")
+            .inner_size(600.0, 160.0)           
+            .position(                          
+                (1920.0 / 2.0) - 300.0,        
+                1080.0 - 200.0,                 
+            )
+            .always_on_top(true)                 
+            .decorations(false)                 
+            .transparent(true)                 
+            .skip_taskbar(true)                  
+            .resizable(false)                 
+            .build()?;
+
+            println!("[App] 🪟 Overlay window created");
+
+          
             tauri::async_runtime::spawn(async move {
                 ws_server::start(app_handle).await;
             });

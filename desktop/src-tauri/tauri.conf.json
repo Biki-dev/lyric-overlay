@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "Lyric Overlay",
-        "width": 400,
-        "height": 300,
+        "label": "main",
+        "title": "Lyric Overlay — Control Panel",
+        "width": 420,
+        "height": 320,
         "resizable": true,
         "fullscreen": false,
         "alwaysOnTop": false
