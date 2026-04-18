@@ -140,7 +140,7 @@ const cardStyle: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
   margin: "0 0 10px", fontSize: "12px", fontWeight: 500,
-  color: "rgba(255,255,255,0.45)",
+  color: "rgba(105, 240, 37, 0.63)",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   letterSpacing: "0.05em", textTransform: "uppercase",
   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
