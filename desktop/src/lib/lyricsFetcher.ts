@@ -14,9 +14,10 @@ export interface FetchResult {
 // ── Main fetch function ───────────────────────────────────────────────────
 export async function fetchLyrics(
   videoId:    string,
-  videoTitle: string
+  videoTitle: string,
+  force:      boolean = false
 ): Promise<FetchResult> {
-  if (cache.has(videoId)) {
+  if (!force && cache.has(videoId)) {
     const cached = cache.get(videoId)!;
     return { found: !!cached, data: cached, source: "cache" };
   }

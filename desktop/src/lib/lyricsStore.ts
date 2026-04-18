@@ -24,7 +24,8 @@ export function getCachedLyrics(videoId: string): ParsedLrc | null {
 // Async fetch — tries manual map first, then lrclib.net
 export async function loadLyrics(
   videoId:    string,
-  videoTitle: string
+  videoTitle: string,
+  force:      boolean = false
 ): Promise<ParsedLrc | null> {
   // 1. Manual override takes priority
   if (videoId in MANUAL_LRC) {
@@ -33,13 +34,13 @@ export async function loadLyrics(
     return parsed;
   }
 
-  // 2. Already cached from a previous fetch
-  if (cache.has(videoId)) {
+  // 2. Already cached from a previous fetch (unless forced)
+  if (!force && cache.has(videoId)) {
     return cache.get(videoId)!;
   }
 
   // 3. Fetch from lrclib.net
-  const result = await fetchLyrics(videoId, videoTitle);
+  const result = await fetchLyrics(videoId, videoTitle, force);
   cache.set(videoId, result.data);
   return result.data;
 }

@@ -19,7 +19,8 @@ export function usePlayback() {
 
   const interpolatorRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVideoId     = useRef<string | null>(null);
-  const fetchedForId    = useRef<string | null>(null); // track what we already fetched
+  const lastTitle       = useRef<string | null>(null);
+  const fetchedFor      = useRef<{ id: string, title: string } | null>(null); 
 
   // ── Interpolation ───────────────────────────────────────────────────────
   function startInterpolation(baseTime: number, basestamp: number) {
@@ -42,19 +43,25 @@ export function usePlayback() {
 
   // ── Lyrics fetch ────────────────────────────────────────────────────────
   const triggerFetch = useCallback(async (videoId: string, title: string) => {
-    // Don't re-fetch if already fetched for this video
-    if (fetchedForId.current === videoId) return;
-    fetchedForId.current = videoId;
+    // Check if we already fetched for this exact ID and Title
+    if (fetchedFor.current?.id === videoId && fetchedFor.current?.title === title) return;
+
+    // If ID is same but Title is different, we force a re-fetch because the previous 
+    // fetch might have happened with stale metadata (common on YouTube SPA navigation).
+    const isRetryWithNewTitle = fetchedFor.current?.id === videoId && fetchedFor.current?.title !== title;
+
+    fetchedFor.current = { id: videoId, title };
 
     setLyrics(null);
     setLyricsStatus("loading");
     setOffset(0); // reset offset for new song
 
-    console.log(`[Lyrics] Starting fetch for: ${title}`);
-    const data = await loadLyrics(videoId, title);
+    console.log(`[Lyrics] Starting fetch for: ${title}${isRetryWithNewTitle ? " (Updated Title)" : ""}`);
+    const data = await loadLyrics(videoId, title, isRetryWithNewTitle);
 
-    // Guard: user may have changed video while fetching
-    if (fetchedForId.current !== videoId) return;
+    // Guard: ensure we only update if this is STILL the active request
+    // (prevents stale/slow fetches from overwriting newer ones for the same ID)
+    if (fetchedFor.current?.id !== videoId || fetchedFor.current?.title !== title) return;
 
     if (data && data.lines.length > 0) {
       setLyrics(data);
@@ -83,10 +90,10 @@ export function usePlayback() {
       }));
 
       // ── Fetch lyrics as early as possible ──
-      // Trigger on ANY event that carries a new videoId+title
-      // This way we start fetching on the very first message
-      if (videoId && title && videoId !== lastVideoId.current) {
+      // Trigger if ID changes OR if Title changes (handles stale metadata)
+      if (videoId && title && (videoId !== lastVideoId.current || title !== lastTitle.current)) {
         lastVideoId.current = videoId;
+        lastTitle.current   = title;
         triggerFetch(videoId, title);
       }
 
@@ -113,6 +120,7 @@ export function usePlayback() {
         case "videoChanged":
           stopInterpolation();
           lastVideoId.current = videoId ?? null;
+          lastTitle.current   = title   ?? null;
           setPlayback({
             videoId:     videoId  ?? null,
             title:       title    ?? null,
