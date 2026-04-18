@@ -23,10 +23,6 @@ function LyricsDisplay({ lines, currentTime }: Props) {
 
   return (
     <div style={{ textAlign: "center", width: "100%" }}>
-      <p style={{ ...styles.line, ...styles.dimLine, marginBottom: "6px" }}>
-        {window.prev?.text ?? ""}
-      </p>
-
       <p
         key={window.index}
         style={{ ...styles.line, ...styles.activeLine }}
@@ -34,7 +30,7 @@ function LyricsDisplay({ lines, currentTime }: Props) {
         {window.current.text || "♩"}  {/* blank = instrumental break */}
       </p>
 
-      <p style={{ ...styles.line, ...styles.dimLine, marginTop: "6px" }}>
+      <p style={{ ...styles.line, ...styles.dimLine, marginTop: "10px" }}>
         {window.next?.text ?? ""}
       </p>
     </div>

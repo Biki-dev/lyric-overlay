@@ -2,6 +2,9 @@ import { useEffect } from "react";
 import { usePlayback } from "../hooks/usePlayback";
 import LyricsDisplay from "../components/LyricsDisplay";
 import ProgressBar from "../components/ProgressBar";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
+const appWindow = getCurrentWindow();
 
 function Overlay() {
   const { playback, lyrics, lyricsStatus, offset, setOffset } = usePlayback();
@@ -34,16 +37,37 @@ function Overlay() {
 
   return (
     <div style={containerStyle}>
-      <div style={cardStyle}>
+      <div 
+        style={cardStyle} 
+        onMouseDown={async () => {
+          await appWindow.startDragging();
+        }}
+      >
 
         {/* Song title */}
-        <p style={titleStyle}>{getTitle()}</p>
+        <p 
+          style={titleStyle} 
+          onMouseDown={async () => {
+            console.log("Dragging from title...");
+            await appWindow.startDragging();
+          }}
+        >
+          {getTitle()}
+        </p>
 
         {/* Lyrics */}
-        <LyricsDisplay
-          lines={lines}
-          currentTime={adjustedTime}   // ← offset applied here
-        />
+        <div 
+          style={{ width: "100%", cursor: "grab" }}
+          onMouseDown={async () => {
+            console.log("Dragging from lyrics...");
+            await appWindow.startDragging();
+          }}
+        >
+          <LyricsDisplay
+            lines={lines}
+            currentTime={adjustedTime}   // ← offset applied here
+          />
+        </div>
 
         {/* Progress bar */}
         {hasVideo && (
@@ -53,7 +77,7 @@ function Overlay() {
           />
         )}
 
-        {/* Sync offset controls — only show when lyrics are loaded */}
+        {/* Sync offset controls — only show when lyrics are loaded 
         {lyricsStatus === "found" && (
           <div style={syncRowStyle}>
             <div style={sliderWrapperStyle}>
@@ -64,6 +88,7 @@ function Overlay() {
                 step="0.1"
                 value={offset}
                 onChange={(e) => setOffset(parseFloat(e.target.value))}
+                onMouseDown={(e) => e.stopPropagation()}
                 style={sliderStyle}
                 className="sync-slider"
               />
@@ -75,6 +100,7 @@ function Overlay() {
             {offset !== 0 && (
               <button
                 style={{ ...syncBtnStyle, color: "#ff5a5a" }}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => setOffset(0)}
                 title="Reset offset"
               >
@@ -83,7 +109,7 @@ function Overlay() {
             )}
           </div>
         )}
-
+*/}
       </div>
     </div>
   );
@@ -96,9 +122,12 @@ const containerStyle: React.CSSProperties = {
   background: "transparent",
   display: "flex", alignItems: "flex-end", justifyContent: "center",
   paddingBottom: "32px", boxSizing: "border-box", userSelect: "none",
+  pointerEvents: "none", // Allow clicking through the transparent area
 };
 
 const cardStyle: React.CSSProperties = {
+  pointerEvents: "auto", // Re-enable interaction for the card itself
+  cursor: "grab",       // Visual hint that it's draggable
   background: "rgba(0,0,0,0.72)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
