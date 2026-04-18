@@ -2,23 +2,35 @@ import { useState } from "react";
 import LyricsDisplay from "../components/LyricsDisplay";
 import ProgressBar from "../components/ProgressBar";
 import { LyricLine, PlaybackState } from "../types";
+import { parseLrc } from "../lib/lrcParser";
 
-const MOCK_LYRICS: LyricLine[] = [
-  { time: 0,  text: "We don't talk about Bruno" },
-  { time: 4,  text: "No, no, no" },
-  { time: 6,  text: "We don't talk about Bruno" },
-  { time: 10, text: "But it was my wedding day" },
-  { time: 14, text: "It was our wedding day" },
-  { time: 18, text: "We were getting ready" },
-  { time: 22, text: "And there wasn't a cloud in the sky" },
-  { time: 26, text: "No clouds allowed in the sky" },
-];
+// Sample LRC — replace with real fetch in Phase 8
+const SAMPLE_LRC = `
+[ti:As It Was]
+[ar:Harry Styles]
+[00:00.00]
+[00:13.45]Holding me back
+[00:15.82]Gravity's holding me back
+[00:19.10]I want you to hold out the palm of your hand
+[00:24.54]Why don't we leave it at that?
+[00:28.90]Nothing to say
+[00:31.20]When everything gets in the way
+[00:34.80]Seems you cannot be replaced
+[00:38.10]And I'm the one who will stay
+[00:42.50]In this world, it's just us
+[00:46.10]You know it's not the same as it was
+[00:52.40]In this world, it's just us
+[00:56.00]You know it's not the same as it was
+[01:02.30]As it was
+`.trim();
+
+const { lines: MOCK_LYRICS, metadata: MOCK_META } = parseLrc(SAMPLE_LRC);
 
 const MOCK_STATE: PlaybackState = {
   videoId:     "mock123",
-  title:       "We Don't Talk About Bruno",
+  title:       MOCK_META.title ?? "Unknown",
   currentTime: 0,
-  duration:    180,
+  duration:    200,
   paused:      false,
 };
 
