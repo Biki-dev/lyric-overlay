@@ -26,7 +26,8 @@ pub fn run() {
             .decorations(false)                 
             .transparent(true)                 
             .skip_taskbar(true)                  
-            .resizable(false)                 
+            .resizable(false)
+            .shadow(false)                 
             .build()?;
 
             println!("[App] 🪟 Overlay window created");
