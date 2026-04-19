@@ -11,7 +11,7 @@ const appWindow = getCurrentWindow();
 
 function Overlay() {
   const { playback, lyrics, lyricsStatus, offset, setOffset } = usePlayback();
-  const { layoutMode } = useSettings();
+  const { layoutMode, clickThrough, changeClickThrough } = useSettings();
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -43,17 +43,36 @@ function Overlay() {
 
   const isMinimal = layoutMode === "minimal";
 
+  // Sync click-through state with the OS window
+  useEffect(() => {
+    appWindow.setIgnoreCursorEvents(clickThrough);
+  }, [clickThrough]);
+
   return (
-    <div style={containerStyle}>
+    <div 
+      style={containerStyle}
+      onMouseEnter={() => {
+        if (!clickThrough) appWindow.setIgnoreCursorEvents(true);
+      }}
+    >
       <div 
         style={{
           ...cardStyle,
           background: isMinimal ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.72)",
           padding: isMinimal ? "12px 24px" : "18px 32px 14px",
           width: isMinimal ? "700px" : "580px",
+          cursor: clickThrough ? "default" : "grab",
+          opacity: clickThrough ? 0.6 : 1,
         }} 
+        onMouseEnter={(e) => {
+          e.stopPropagation();
+          if (!clickThrough) appWindow.setIgnoreCursorEvents(false);
+        }}
+        onMouseLeave={() => {
+          if (!clickThrough) appWindow.setIgnoreCursorEvents(true);
+        }}
         onMouseDown={async () => {
-          await appWindow.startDragging();
+          if (!clickThrough) await appWindow.startDragging();
         }}
       >
 

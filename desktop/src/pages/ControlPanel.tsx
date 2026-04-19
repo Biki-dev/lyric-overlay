@@ -3,7 +3,7 @@ import { useSettings } from "../hooks/useSettings";
 
 function ControlPanel() {
   const { playback, lyricsStatus } = usePlayback();
-  const { layoutMode, changeLayoutMode } = useSettings();
+  const { layoutMode, changeLayoutMode, clickThrough, changeClickThrough } = useSettings();
   const connected = !!playback.videoId;
 
   const lyricsValue =
@@ -43,7 +43,27 @@ function ControlPanel() {
             </button>
           </div>
         </div>
+
+        <div style={layoutRowStyle}>
+          <span style={labelStyle}>Interaction</span>
+          <div style={btnGroupStyle}>
+            <button 
+              onClick={() => changeClickThrough(false)}
+              style={{ ...btnStyle, background: !clickThrough ? "#1db954" : "#333" }}
+            >
+              Unlocked (Move)
+            </button>
+            <button 
+              onClick={() => changeClickThrough(true)}
+              style={{ ...btnStyle, background: clickThrough ? "#e67e22" : "#333" }}
+              title="Locks the window and makes it click-through"
+            >
+              Locked (Ghost)
+            </button>
+          </div>
+        </div>
       </div>
+
       <p style={hintStyle}>
         {lyricsStatus === "not_found"
           ? "Lyrics not found. Try a more popular song, or add LRC manually to lyricsStore.ts."
