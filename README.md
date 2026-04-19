@@ -26,6 +26,37 @@ To add the listener to your browser:
 
 ---
 
+## 🏗️ Core Architecture
+
+A lightweight, event-driven system connects your browser to your desktop with minimal latency.
+
+### 🔄 Data Flow
+
+```mermaid
+flowchart TD
+    subgraph B["🌐 Browser Layer (YouTube Tab)"]
+        EXT["Chrome Extension\n• Detects playback\n• Extracts metadata"]
+    end
+
+    subgraph R["🦀 Desktop Backend (Tauri / Rust)"]
+        WS["WebSocket Server (:9001)\n• Receives JSON state"]
+        EVT["Tauri Event System\n• Dispatches events"]
+    end
+
+    subgraph F["⚛️ Desktop UI (React)"]
+        HOOK["usePlayback Hook\n• Subscribes to events"]
+        STORE["Lyrics Store\n• Fetch + cache LRC"]
+        UI["Overlay Window\n• Renders synced lyrics"]
+    end
+
+    EXT -->|"Playback State (JSON)"| WS
+    WS -->|"Emit Event"| EVT
+    EVT -->|"Playback Update"| HOOK
+    HOOK -->|"Request Lyrics"| STORE
+    STORE -->|"Return LRC Data"| HOOK
+    HOOK -->|"Update UI State"| UI
+```
+
 ## 💡 How to Use
 
 1.  **Start the Desktop App**.
