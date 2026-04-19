@@ -2,7 +2,8 @@
 
 Lyric Overlay is a two-part system designed to bring beautiful, synchronized lyrics directly to your desktop while you enjoy music on YouTube.
 
----
+<img src="banner.jpg">
+
 
 ## 🚀 How it Works
 
