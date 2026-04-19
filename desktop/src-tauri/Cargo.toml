@@ -1,5 +1,5 @@
 [package]
-name = "lyric-Overlay-dasktop"
+name = "desktop"
 version = "0.1.0"
 description = "Lyric Overlay Desktop App"
 authors = ["you"]
