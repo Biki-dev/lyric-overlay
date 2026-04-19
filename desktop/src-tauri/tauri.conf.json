@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "desktop",
+  "productName": "lyrics-overlay-desktop",
   "version": "0.1.0",
   "identifier": "lyric-overlay-desktop",
   "build": {
