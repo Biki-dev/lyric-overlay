@@ -11,7 +11,7 @@ const appWindow = getCurrentWindow();
 
 function Overlay() {
   const { playback, lyrics, lyricsStatus, offset, setOffset } = usePlayback();
-  const { layoutMode, clickThrough, changeClickThrough } = useSettings();
+  const { layoutMode, clickThrough } = useSettings();
 
   // Handle keyboard shortcuts
   useEffect(() => {
