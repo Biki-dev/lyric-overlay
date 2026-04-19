@@ -12,7 +12,18 @@ The system consists of two simple parts working together:
 2.  **The Desktop App**: A beautiful, floating window that displays the lyrics on your screen.
 
 ---
+## Preview
 
+### Main Pannel
+<img src="main-panel.png">
+
+### Classic Mode
+<img src="classic-mode.png">
+
+### Minimal Mode
+<img src="minimal-mode.png">
+
+---
 ## 📥 Installation & Setup
 
 ### 1. The Desktop App
