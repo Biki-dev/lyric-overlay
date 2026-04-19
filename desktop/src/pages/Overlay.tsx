@@ -1,13 +1,17 @@
 import { useEffect } from "react";
 import { usePlayback } from "../hooks/usePlayback";
+import { useSettings } from "../hooks/useSettings";
 import LyricsDisplay from "../components/LyricsDisplay";
+import MinimalLyrics from "../components/MinimalLyrics";
 import ProgressBar from "../components/ProgressBar";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getLyricWindow } from "../lib/lyricsEngine";
 
 const appWindow = getCurrentWindow();
 
 function Overlay() {
   const { playback, lyrics, lyricsStatus, offset, setOffset } = usePlayback();
+  const { layoutMode } = useSettings();
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -28,6 +32,8 @@ function Overlay() {
   // Apply offset to currentTime before passing to lyrics engine
   const adjustedTime = playback.currentTime + offset;
 
+  const lyricWindow = getLyricWindow(lines, adjustedTime);
+
   function getTitle() {
     if (!hasVideo) return "♪ Play a YouTube video";
     if (lyricsStatus === "loading") return "⏳ Fetching lyrics...";
@@ -35,42 +41,57 @@ function Overlay() {
     return `${playback.paused ? "⏸" : "♪"} ${playback.title ?? ""}`;
   }
 
+  const isMinimal = layoutMode === "minimal";
+
   return (
     <div style={containerStyle}>
       <div 
-        style={cardStyle} 
+        style={{
+          ...cardStyle,
+          background: isMinimal ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.72)",
+          padding: isMinimal ? "12px 24px" : "18px 32px 14px",
+          width: isMinimal ? "700px" : "580px",
+        }} 
         onMouseDown={async () => {
           await appWindow.startDragging();
         }}
       >
 
-        {/* Song title */}
-        <p 
-          style={titleStyle} 
-          onMouseDown={async () => {
-            console.log("Dragging from title...");
-            await appWindow.startDragging();
-          }}
-        >
-          {getTitle()}
-        </p>
+        {/* Song title - hidden in minimal mode */}
+        {!isMinimal && (
+          <p 
+            style={titleStyle} 
+            onMouseDown={async () => {
+              await appWindow.startDragging();
+            }}
+          >
+            {getTitle()}
+          </p>
+        )}
 
         {/* Lyrics */}
         <div 
           style={{ width: "100%", cursor: "grab" }}
           onMouseDown={async () => {
-            console.log("Dragging from lyrics...");
             await appWindow.startDragging();
           }}
         >
-          <LyricsDisplay
-            lines={lines}
-            currentTime={adjustedTime}   // ← offset applied here
-          />
+          {isMinimal ? (
+            <MinimalLyrics 
+              line={lyricWindow.current}
+              nextLineTime={lyricWindow.next?.time ?? null}
+              currentTime={adjustedTime}
+            />
+          ) : (
+            <LyricsDisplay
+              lines={lines}
+              currentTime={adjustedTime}
+            />
+          )}
         </div>
 
-        {/* Progress bar */}
-        {hasVideo && (
+        {/* Progress bar - hidden in minimal mode */}
+        {!isMinimal && hasVideo && (
           <ProgressBar
             currentTime={playback.currentTime}
             duration={playback.duration}
@@ -115,13 +136,14 @@ function Overlay() {
   );
 }
 
+
 // ── Styles ────────────────────────────────────────────────────────────────
 
 const containerStyle: React.CSSProperties = {
   width: "100vw", height: "100vh",
   background: "transparent",
-  display: "flex", alignItems: "flex-end", justifyContent: "center",
-  paddingBottom: "32px", boxSizing: "border-box", userSelect: "none",
+  display: "flex", alignItems: "flex-start", justifyContent: "center",
+  boxSizing: "border-box", userSelect: "none",
   pointerEvents: "none", // Allow clicking through the transparent area
 };
 

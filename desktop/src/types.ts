@@ -18,3 +18,5 @@ export interface LyricsData {
   title:   string;
   lines:   LyricLine[];
 }
+
+export type LayoutMode = "classic" | "minimal";

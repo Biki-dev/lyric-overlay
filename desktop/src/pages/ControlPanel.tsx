@@ -1,7 +1,9 @@
 import { usePlayback } from "../hooks/usePlayback";
+import { useSettings } from "../hooks/useSettings";
 
 function ControlPanel() {
   const { playback, lyricsStatus } = usePlayback();
+  const { layoutMode, changeLayoutMode } = useSettings();
   const connected = !!playback.videoId;
 
   const lyricsValue =
@@ -23,6 +25,24 @@ function ControlPanel() {
         <Row label="Lyrics"      value={lyricsValue} valueColor={lyricsColor} />
         <Row label="Playback"    value={!connected ? "—" : playback.paused ? "⏸ Paused" : "▶ Playing"} />
         <Row label="Time"        value={connected ? formatTime(playback.currentTime) : "—"} />
+        
+        <div style={layoutRowStyle}>
+          <span style={labelStyle}>Layout</span>
+          <div style={btnGroupStyle}>
+            <button 
+              onClick={() => changeLayoutMode("classic")}
+              style={{ ...btnStyle, background: layoutMode === "classic" ? "#1db954" : "#333" }}
+            >
+              Classic
+            </button>
+            <button 
+              onClick={() => changeLayoutMode("minimal")}
+              style={{ ...btnStyle, background: layoutMode === "minimal" ? "#1db954" : "#333" }}
+            >
+              Minimal
+            </button>
+          </div>
+        </div>
       </div>
       <p style={hintStyle}>
         {lyricsStatus === "not_found"
@@ -53,5 +73,13 @@ const containerStyle: React.CSSProperties = { padding: "1.5rem", background: "#1
 const headingStyle:   React.CSSProperties = { margin: "0 0 1rem", fontSize: "16px", fontWeight: 600, fontFamily: "sans-serif" };
 const cardStyle:      React.CSSProperties = { background: "#1a1a1a", borderRadius: "10px", padding: "4px 14px", marginBottom: "1rem", border: "1px solid rgba(255,255,255,0.06)" };
 const hintStyle:      React.CSSProperties = { fontSize: "12px", color: "#555", lineHeight: 1.6, fontFamily: "sans-serif" };
+
+const layoutRowStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 8px" };
+const labelStyle:     React.CSSProperties = { color: "#888", fontSize: "13px", fontFamily: "sans-serif" };
+const btnGroupStyle:  React.CSSProperties = { display: "flex", gap: "6px" };
+const btnStyle:       React.CSSProperties = { 
+  border: "none", borderRadius: "6px", padding: "6px 12px", color: "#fff", fontSize: "12px", 
+  fontWeight: 600, cursor: "pointer", transition: "background 0.2s ease" 
+};
 
 export default ControlPanel;
