@@ -40,6 +40,15 @@ pub fn run() {
             println!("[App] 🎵 Lyric Overlay started");
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    if let Some(overlay_window) = window.get_webview_window("overlay") {
+                        let _ = overlay_window.close();
+                    }
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
