@@ -26,36 +26,59 @@ To add the listener to your browser:
 
 ---
 
-## 🏗️ Core Architecture
+## 🏗 Core Architecture
 
-A lightweight, event-driven system connects your browser to your desktop with minimal latency.
+Lyric Overlay is built on a high-performance, real-time data bridge between your web browser and your desktop environment.
 
 ### 🔄 Data Flow
-
 ```mermaid
-flowchart TD
-    subgraph B["🌐 Browser Layer (YouTube Tab)"]
-        EXT["Chrome Extension\n• Detects playback\n• Extracts metadata"]
+graph TD
+    subgraph "Browser (YouTube Tab)"
+        Ext[Chrome Extension]
     end
 
-    subgraph R["🦀 Desktop Backend (Tauri / Rust)"]
-        WS["WebSocket Server (:9001)\n• Receives JSON state"]
-        EVT["Tauri Event System\n• Dispatches events"]
+    subgraph "Desktop App (Tauri/Rust)"
+        WS[WebSocket Server :9001]
+        Tauri[Tauri Event System]
     end
 
-    subgraph F["⚛️ Desktop UI (React)"]
-        HOOK["usePlayback Hook\n• Subscribes to events"]
-        STORE["Lyrics Store\n• Fetch + cache LRC"]
-        UI["Overlay Window\n• Renders synced lyrics"]
+    subgraph "Desktop App (React UI)"
+        Hook[usePlayback Hook]
+        Store[Lyrics Store]
+        UI[Overlay Window]
     end
 
-    EXT -->|"Playback State (JSON)"| WS
-    WS -->|"Emit Event"| EVT
-    EVT -->|"Playback Update"| HOOK
-    HOOK -->|"Request Lyrics"| STORE
-    STORE -->|"Return LRC Data"| HOOK
-    HOOK -->|"Update UI State"| UI
+    Ext -- "Playback State (JSON)" --> WS
+    WS -- "Rust to JS Bridge" --> Tauri
+    Tauri -- "Internal Event" --> Hook
+    Hook -- "Fetch Request" --> Store
+    Store -- "LRC Data" --> Hook
+    Hook -- "Render State" --> UI
 ```
+
+## 📖 Lyrics Store (Fetch & Cache)
+
+The project features a robust lyrics management system designed to find accurate lyrics even with messy YouTube titles.
+
+### 🔍 Multi-Strategy Fetching
+When a song starts, the system tries four sequential strategies via the **lrclib.net** API:
+1.  **Artist + Track**: The most accurate (e.g., "Artist - Song Title").
+2.  **Track Only**: Useful if the artist name isn't clearly separated.
+3.  **Swapped Discovery**: Tries swapping artist/track positions to handle "Title - Artist" patterns.
+4.  **Raw Search**: Uses the first 60 characters of the raw YouTube title as a last resort.
+
+### 🧹 Smart Title Parsing
+The **YouTube Title Parser** automatically cleans metadata to improve search hits by removing:
+- Common suffixes: `(Official Video)`, `[MV]`, `Music Audio`, `HD/4K`.
+- Features: `(feat. Artist)`, `ft. Artist`.
+- Extra info: Standalone years like `(2024)` and various bracket styles.
+
+### 💾 Caching & Overrides
+- **In-Memory Cache**: All fetched lyrics are stored in a session-based `Map`, ensuring that switching back to a previous song is instantaneous and saves bandwidth.
+- **Manual Overrides**: For songs where auto-fetching fails or is incorrect, you can provide a direct Video ID mapping in `lyricsStore.ts` to load a custom LRC string.
+- **LRC Conversion**: If only plain-text lyrics are available, the system automatically converts them into a pseudo-LRC format (distributing lines 3 seconds apart) to maintain a functional UI experience.
+
+---
 
 ## 💡 How to Use
 
