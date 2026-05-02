@@ -5,12 +5,13 @@
   "description": "Detects YouTube playback and sends time to the Lyric Overlay desktop app.",
 
   "permissions": ["tabs", "scripting"],
-  "host_permissions": ["https://www.youtube.com/*"],
-
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "ws://localhost:9001/*"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
-
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
@@ -22,5 +23,8 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Lyric Overlay"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' ws://localhost:9001"
   }
 }
