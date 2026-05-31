@@ -4,7 +4,15 @@ Lyric Overlay is a two-part system designed to bring beautiful, synchronized lyr
 
 <img src="banner.jpg">
 
+## 🎥 Demo
 
+<p align="center">
+  <a href="https://x.com/i/status/2045759133983691134">
+    <img src="https://img.shields.io/badge/▶%20Watch%20Demo-1DA1F2?style=for-the-badge" alt="Watch Demo">
+  </a>
+</p>
+
+---
 ## 🚀 How it Works
 
 The system consists of two simple parts working together:
